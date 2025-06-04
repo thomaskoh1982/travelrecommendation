@@ -1,4 +1,3 @@
-// Wait for the DOM to be fully loaded before executing JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     // DOM Elements
     const homeLink = document.getElementById('home-link');
@@ -21,34 +20,40 @@ document.addEventListener('DOMContentLoaded', function() {
     contactSection.classList.add('hidden');
     recommendationsSection.classList.add('hidden');
 
+    // Detect mobile device
+    function isMobileDevice() {
+        return (typeof window.orientation !== "undefined") || 
+               (navigator.userAgent.indexOf('IEMobile') !== -1);
+    }
+
     // Navigation functionality
-    homeLink.addEventListener('click', function(e) {
-        e.preventDefault();
-        homeSection.classList.remove('hidden');
+    function navigateTo(section) {
+        homeSection.classList.add('hidden');
         aboutSection.classList.add('hidden');
         contactSection.classList.add('hidden');
         recommendationsSection.classList.add('hidden');
+        
+        section.classList.remove('hidden');
         window.scrollTo(0, 0);
+    }
+
+    homeLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        navigateTo(homeSection);
     });
 
     aboutLink.addEventListener('click', function(e) {
         e.preventDefault();
-        homeSection.classList.add('hidden');
-        aboutSection.classList.remove('hidden');
-        contactSection.classList.add('hidden');
-        window.scrollTo(0, 0);
+        navigateTo(aboutSection);
     });
 
     contactLink.addEventListener('click', function(e) {
         e.preventDefault();
-        homeSection.classList.add('hidden');
-        aboutSection.classList.add('hidden');
-        contactSection.classList.remove('hidden');
-        window.scrollTo(0, 0);
+        navigateTo(contactSection);
     });
 
     // Search functionality
-    searchBtn.addEventListener('click', function() {
+    function handleSearch() {
         const searchTerm = searchInput.value.trim().toLowerCase();
         
         if (searchTerm === '') {
@@ -57,32 +62,40 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         fetchRecommendations(searchTerm);
+    }
+
+    // Click/touch events for search
+    searchBtn.addEventListener('click', handleSearch);
+    searchBtn.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        handleSearch();
     });
 
-    // Allow search on Enter key press
+    // Enter key press for search
     searchInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
-            const searchTerm = searchInput.value.trim().toLowerCase();
-            
-            if (searchTerm === '') {
-                alert('Please enter a search term (beach, temple, or country)');
-                return;
-            }
-            
-            fetchRecommendations(searchTerm);
+            handleSearch();
         }
     });
 
     // Clear button functionality
-    clearBtn.addEventListener('click', function() {
+    function clearSearch() {
         searchInput.value = '';
         recommendationsSection.classList.add('hidden');
         searchInput.focus();
+    }
+
+    clearBtn.addEventListener('click', clearSearch);
+    clearBtn.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        clearSearch();
     });
 
     // Handle keyboard dismissal on mobile
     searchInput.addEventListener('blur', function() {
-        window.scrollTo(0, 0);
+        if (isMobileDevice()) {
+            window.scrollTo(0, 0);
+        }
     });
 
     // Book Now button functionality
@@ -103,61 +116,95 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // In a real application, you would send this data to a server
         alert(`Thank you for your message, ${name}! We'll get back to you soon at ${email}.`);
-        
-        // Reset the form
         contactForm.reset();
     });
 
     // Fetch recommendations from JSON
     async function fetchRecommendations(searchTerm) {
         try {
-            // Show loading state
-            resultsContainer.innerHTML = '<div class="loading-spinner"></div><p>Loading recommendations...</p>';
+            // Show loading state with mobile-specific message if needed
+            if (isMobileDevice()) {
+                resultsContainer.innerHTML = `
+                    <div class="loading-spinner"></div>
+                    <p>Loading recommendations for mobile...</p>
+                `;
+            } else {
+                resultsContainer.innerHTML = '<div class="loading-spinner"></div><p>Loading recommendations...</p>';
+            }
+            
             recommendationsSection.classList.remove('hidden');
             
-            const response = await fetch('https://raw.githubusercontent.com/thomaskoh1982/travelrecommendation/main/travel_recommendation_api.json');
+            // Try fetching from GitHub first, then fall back to local file
+            let response;
+            try {
+                response = await fetch('https://raw.githubusercontent.com/thomaskoh1982/travelrecommendation/main/travel_recommendation_api.json', {
+                    cache: 'no-cache'
+                });
+                
+                if (!response.ok) throw new Error('GitHub fetch failed');
+            } catch (githubError) {
+                console.log('Falling back to local file');
+                response = await fetch('travel_recommendation_api.json');
+            }
             
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                throw new Error('Failed to load recommendations data');
             }
             
             const data = await response.json();
-            
-            let filteredResults = [];
-            
-            // Check for different keyword variations
-            if (searchTerm.includes('beach') || searchTerm === 'beaches') {
-                filteredResults = data.beaches;
-            } else if (searchTerm.includes('temple') || searchTerm === 'temples') {
-                filteredResults = data.temples;
-            } else if (searchTerm.includes('country') || searchTerm === 'countries') {
-                filteredResults = data.countries;
-            } else {
-                // If no direct match, search in all categories
-                filteredResults = [
-                    ...data.beaches.filter(item => 
-                        item.name.toLowerCase().includes(searchTerm) || 
-                        item.description.toLowerCase().includes(searchTerm)
-                    ),
-                    ...data.temples.filter(item => 
-                        item.name.toLowerCase().includes(searchTerm) || 
-                        item.description.toLowerCase().includes(searchTerm)
-                    ),
-                    ...data.countries.filter(item => 
-                        item.name.toLowerCase().includes(searchTerm) || 
-                        item.description.toLowerCase().includes(searchTerm)
-                    )
-                ];
-            }
-            
+            const filteredResults = filterResults(data, searchTerm);
             displayResults(filteredResults);
         } catch (error) {
-            console.error('Error fetching recommendations:', error);
-            resultsContainer.innerHTML = '<p>Error loading recommendations. Please try again later.</p>';
+            console.error('Error:', error);
+            
+            let errorMessage = 'Error loading recommendations. Please try again later.';
+            if (isMobileDevice()) {
+                errorMessage += '\n(Mobile device detected)';
+            }
+            
+            resultsContainer.innerHTML = `
+                <p>${errorMessage}</p>
+                <p>${error.message}</p>
+                <button onclick="window.location.reload()" style="
+                    padding: 10px 20px;
+                    background: #f39c12;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    margin-top: 10px;
+                ">Retry</button>
+            `;
+            
             recommendationsSection.classList.remove('hidden');
         }
+    }
+
+    // Filter results based on search term
+    function filterResults(data, searchTerm) {
+        if (searchTerm.includes('beach') || searchTerm === 'beaches') {
+            return data.beaches;
+        } else if (searchTerm.includes('temple') || searchTerm === 'temples') {
+            return data.temples;
+        } else if (searchTerm.includes('country') || searchTerm === 'countries') {
+            return data.countries;
+        }
+        
+        // Search across all categories if no direct match
+        return [
+            ...data.beaches.filter(item => 
+                item.name.toLowerCase().includes(searchTerm) || 
+                item.description.toLowerCase().includes(searchTerm)
+            ),
+            ...data.temples.filter(item => 
+                item.name.toLowerCase().includes(searchTerm) || 
+                item.description.toLowerCase().includes(searchTerm)
+            ),
+            ...data.countries.filter(item => 
+                item.name.toLowerCase().includes(searchTerm) || 
+                item.description.toLowerCase().includes(searchTerm)
+            )
+        ];
     }
 
     // Display results
@@ -173,15 +220,13 @@ document.addEventListener('DOMContentLoaded', function() {
         results.forEach(result => {
             const card = document.createElement('div');
             card.className = 'recommendation-card';
-            
             card.innerHTML = `
-                <img src="${result.imageUrl}" alt="${result.name}" class="card-image">
+                <img src="${result.imageUrl}" alt="${result.name}" class="card-image" loading="lazy">
                 <div class="card-content">
                     <h3>${result.name}</h3>
                     <p>${result.description}</p>
                 </div>
             `;
-            
             resultsContainer.appendChild(card);
         });
         
