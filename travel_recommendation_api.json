@@ -1,0 +1,53 @@
+{
+    "beaches": [
+        {
+            "name": "Maldives",
+            "imageUrl": "https://images.unsplash.com/photo-1439066615861-d1af74d74000?ixlib=rb-4.0.3",
+            "description": "The Maldives is famous for its crystal clear waters, white sandy beaches, and luxurious overwater bungalows. Perfect for honeymooners and those seeking a tropical paradise."
+        },
+        {
+            "name": "Bora Bora",
+            "imageUrl": "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?ixlib=rb-4.0.3",
+            "description": "Bora Bora is a small South Pacific island northwest of Tahiti in French Polynesia. Surrounded by sand-fringed motus (islets) and a turquoise lagoon protected by a coral reef, it's known for its scuba diving."
+        },
+        {
+            "name": "Whitehaven Beach",
+            "imageUrl": "https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?ixlib=rb-4.0.3",
+            "description": "Located in Australia's Whitsunday Islands, Whitehaven Beach is known for its stunning white silica sand and crystal clear waters. The beach stretches over 7 km and is accessible only by boat, seaplane or helicopter."
+        }
+    ],
+    "temples": [
+        {
+            "name": "Angkor Wat",
+            "imageUrl": "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?ixlib=rb-4.0.3",
+            "description": "Angkor Wat is a temple complex in Cambodia and the largest religious monument in the world. Originally constructed as a Hindu temple dedicated to the god Vishnu, it was gradually transformed into a Buddhist temple towards the end of the 12th century."
+        },
+        {
+            "name": "Borobudur",
+            "imageUrl": "https://images.unsplash.com/photo-1589330694653-ded6df03f754?ixlib=rb-4.0.3",
+            "description": "Borobudur is a 9th-century Mahayana Buddhist temple in Central Java, Indonesia. The temple consists of nine stacked platforms, six square and three circular, topped by a central dome. It is decorated with 2,672 relief panels and 504 Buddha statues."
+        },
+        {
+            "name": "Golden Temple",
+            "imageUrl": "https://images.unsplash.com/photo-1582972236019-ea9e293f1a1e?ixlib=rb-4.0.3",
+            "description": "The Golden Temple, also known as Harmandir Sahib, is a gurdwara located in the city of Amritsar, Punjab, India. It is the preeminent spiritual site of Sikhism and is surrounded by the sacred pool known as the Sarovar."
+        }
+    ],
+    "countries": [
+        {
+            "name": "Japan",
+            "imageUrl": "https://images.unsplash.com/photo-1492571350019-22de08371fd3?ixlib=rb-4.0.3",
+            "description": "Japan is an island country in East Asia known for its unique blend of traditional and modern culture. From the neon lights of Tokyo to the historic temples of Kyoto, Japan offers a diverse range of experiences for travelers."
+        },
+        {
+            "name": "Italy",
+            "imageUrl": "https://images.unsplash.com/photo-1533676802871-eca1ae998cd5?ixlib=rb-4.0.3",
+            "description": "Italy is a European country with a long Mediterranean coastline that has left a powerful mark on Western culture and cuisine. Its capital, Rome, is home to the Vatican as well as landmark art and ancient ruins."
+        },
+        {
+            "name": "New Zealand",
+            "imageUrl": "https://images.unsplash.com/photo-1507699622108-4be3abd695ad?ixlib=rb-4.0.3",
+            "description": "New Zealand is an island country in the southwestern Pacific Ocean. The country's varied topography and sharp mountain peaks owe much to the tectonic uplift of land and volcanic eruptions. New Zealand is known for its stunning natural landscapes and adventure tourism."
+        }
+    ]
+}
