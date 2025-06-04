@@ -80,6 +80,11 @@ document.addEventListener('DOMContentLoaded', function() {
         searchInput.focus();
     });
 
+    // Handle keyboard dismissal on mobile
+    searchInput.addEventListener('blur', function() {
+        window.scrollTo(0, 0);
+    });
+
     // Book Now button functionality
     bookNowBtn.addEventListener('click', function() {
         alert('Booking functionality would be implemented here in a real application!');
@@ -109,10 +114,10 @@ document.addEventListener('DOMContentLoaded', function() {
     async function fetchRecommendations(searchTerm) {
         try {
             // Show loading state
-            resultsContainer.innerHTML = '<p>Loading recommendations...</p>';
+            resultsContainer.innerHTML = '<div class="loading-spinner"></div><p>Loading recommendations...</p>';
             recommendationsSection.classList.remove('hidden');
             
-            const response = await fetch('https://github.com/thomaskoh1982/travelrecommendation/blob/main/travel_recommendation_api.json');
+            const response = await fetch('https://raw.githubusercontent.com/thomaskoh1982/travelrecommendation/main/travel_recommendation_api.json');
             
             if (!response.ok) {
                 throw new Error('Network response was not ok');
