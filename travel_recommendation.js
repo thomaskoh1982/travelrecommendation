@@ -14,99 +14,131 @@ document.addEventListener('DOMContentLoaded', function() {
     const contactForm = document.getElementById('contact-form');
     const bookNowBtn = document.querySelector('.book-now');
 
-    // Initialize the page - show home section by default
-    homeSection.classList.remove('hidden');
-    aboutSection.classList.add('hidden');
-    contactSection.classList.add('hidden');
-    recommendationsSection.classList.add('hidden');
-
-    // Detect mobile device
-    function isMobileDevice() {
-        return (typeof window.orientation !== "undefined") || 
-               (navigator.userAgent.indexOf('IEMobile') !== -1);
-    }
-
-    // Navigation functionality
-    function navigateTo(section) {
-        homeSection.classList.add('hidden');
+    // Initialize the page
+    function initPage() {
+        homeSection.classList.remove('hidden');
         aboutSection.classList.add('hidden');
         contactSection.classList.add('hidden');
         recommendationsSection.classList.add('hidden');
-        
+    }
+    initPage();
+
+    // Mobile detection with more reliable checks
+    function isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    // Navigation controller
+    function navigateTo(section) {
+        [homeSection, aboutSection, contactSection, recommendationsSection].forEach(sec => {
+            sec.classList.add('hidden');
+        });
         section.classList.remove('hidden');
         window.scrollTo(0, 0);
     }
 
-    homeLink.addEventListener('click', function(e) {
-        e.preventDefault();
-        navigateTo(homeSection);
-    });
-
-    aboutLink.addEventListener('click', function(e) {
-        e.preventDefault();
-        navigateTo(aboutSection);
-    });
-
-    contactLink.addEventListener('click', function(e) {
-        e.preventDefault();
-        navigateTo(contactSection);
+    // Event listeners for navigation
+    [homeLink, aboutLink, contactLink].forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = this.id.replace('-link', '-section');
+            navigateTo(document.getElementById(target));
+        });
+        
+        // Add touch support for mobile
+        link.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            const target = this.id.replace('-link', '-section');
+            navigateTo(document.getElementById(target));
+        });
     });
 
     // Search functionality
-    function handleSearch() {
+    async function handleSearch() {
         const searchTerm = searchInput.value.trim().toLowerCase();
         
-        if (searchTerm === '') {
+        if (!searchTerm) {
             alert('Please enter a search term (beach, temple, or country)');
             return;
         }
         
-        fetchRecommendations(searchTerm);
+        try {
+            // Show loading state
+            resultsContainer.innerHTML = `
+                <div class="loading-spinner"></div>
+                <p>Loading recommendations...</p>
+            `;
+            recommendationsSection.classList.remove('hidden');
+            
+            // First try to load the local JSON file directly
+            let data;
+            try {
+                const response = await fetch('travel_recommendation_api.json');
+                if (!response.ok) throw new Error('Local fetch failed');
+                data = await response.json();
+            } catch (localError) {
+                console.log('Local fetch failed, trying GitHub');
+                // If local fails, try GitHub (mobile browsers often block local file access)
+                const githubResponse = await fetch('https://raw.githubusercontent.com/thomaskoh1982/travelrecommendation/main/travel_recommendation_api.json');
+                if (!githubResponse.ok) throw new Error('GitHub fetch failed');
+                data = await githubResponse.json();
+            }
+            
+            // Filter and display results
+            const filteredResults = filterResults(data, searchTerm);
+            displayResults(filteredResults);
+        } catch (error) {
+            console.error('Search error:', error);
+            resultsContainer.innerHTML = `
+                <p>Couldn't load recommendations.</p>
+                <p>${isMobileDevice() ? 'Mobile ' : ''}Error: ${error.message}</p>
+                <button class="retry-btn" onclick="window.location.reload()">Try Again</button>
+            `;
+            recommendationsSection.classList.remove('hidden');
+        }
     }
 
-    // Click/touch events for search
+    // Search event handlers
     searchBtn.addEventListener('click', handleSearch);
     searchBtn.addEventListener('touchend', function(e) {
         e.preventDefault();
         handleSearch();
     });
 
-    // Enter key press for search
+    // Enter key search
     searchInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            handleSearch();
-        }
+        if (e.key === 'Enter') handleSearch();
     });
 
-    // Clear button functionality
+    // Clear search
     function clearSearch() {
         searchInput.value = '';
         recommendationsSection.classList.add('hidden');
         searchInput.focus();
     }
-
     clearBtn.addEventListener('click', clearSearch);
     clearBtn.addEventListener('touchend', function(e) {
         e.preventDefault();
         clearSearch();
     });
 
-    // Handle keyboard dismissal on mobile
-    searchInput.addEventListener('blur', function() {
-        if (isMobileDevice()) {
-            window.scrollTo(0, 0);
-        }
-    });
+    // Mobile keyboard handling
+    if (isMobileDevice()) {
+        searchInput.addEventListener('blur', function() {
+            setTimeout(() => {
+                window.scrollTo(0, 0);
+            }, 100);
+        });
+    }
 
-    // Book Now button functionality
+    // Book Now button
     bookNowBtn.addEventListener('click', function() {
-        alert('Booking functionality would be implemented here in a real application!');
+        alert('Booking system would connect here!');
     });
 
-    // Contact form submission
+    // Contact form
     contactForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
         const name = document.getElementById('name').value;
         const email = document.getElementById('email').value;
         const message = document.getElementById('message').value;
@@ -116,101 +148,55 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        alert(`Thank you for your message, ${name}! We'll get back to you soon at ${email}.`);
+        alert(`Thank you, ${name}! We'll contact you at ${email}.`);
         contactForm.reset();
     });
 
-    // Fetch recommendations from JSON
-    async function fetchRecommendations(searchTerm) {
-        try {
-            // Show loading state with mobile-specific message if needed
-            if (isMobileDevice()) {
-                resultsContainer.innerHTML = `
-                    <div class="loading-spinner"></div>
-                    <p>Loading recommendations for mobile...</p>
-                `;
-            } else {
-                resultsContainer.innerHTML = '<div class="loading-spinner"></div><p>Loading recommendations...</p>';
-            }
-            
-            recommendationsSection.classList.remove('hidden');
-            
-            // Try fetching from GitHub first, then fall back to local file
-            let response;
-            try {
-                response = await fetch('https://raw.githubusercontent.com/thomaskoh1982/travelrecommendation/main/travel_recommendation_api.json', {
-                    cache: 'no-cache'
-                });
-                
-                if (!response.ok) throw new Error('GitHub fetch failed');
-            } catch (githubError) {
-                console.log('Falling back to local file');
-                response = await fetch('travel_recommendation_api.json');
-            }
-            
-            if (!response.ok) {
-                throw new Error('Failed to load recommendations data');
-            }
-            
-            const data = await response.json();
-            const filteredResults = filterResults(data, searchTerm);
-            displayResults(filteredResults);
-        } catch (error) {
-            console.error('Error:', error);
-            
-            let errorMessage = 'Error loading recommendations. Please try again later.';
-            if (isMobileDevice()) {
-                errorMessage += '\n(Mobile device detected)';
-            }
-            
-            resultsContainer.innerHTML = `
-                <p>${errorMessage}</p>
-                <p>${error.message}</p>
-                <button onclick="window.location.reload()" style="
-                    padding: 10px 20px;
-                    background: #f39c12;
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                    margin-top: 10px;
-                ">Retry</button>
-            `;
-            
-            recommendationsSection.classList.remove('hidden');
-        }
-    }
-
-    // Filter results based on search term
+    // Filter results
     function filterResults(data, searchTerm) {
+        const searchWords = searchTerm.split(' ');
+        
+        // First check for exact category matches
         if (searchTerm.includes('beach') || searchTerm === 'beaches') {
             return data.beaches;
-        } else if (searchTerm.includes('temple') || searchTerm === 'temples') {
+        }
+        if (searchTerm.includes('temple') || searchTerm === 'temples') {
             return data.temples;
-        } else if (searchTerm.includes('country') || searchTerm === 'countries') {
+        }
+        if (searchTerm.includes('country') || searchTerm === 'countries') {
             return data.countries;
         }
         
-        // Search across all categories if no direct match
+        // Search across all categories
         return [
             ...data.beaches.filter(item => 
-                item.name.toLowerCase().includes(searchTerm) || 
-                item.description.toLowerCase().includes(searchTerm)
+                searchWords.some(word => 
+                    item.name.toLowerCase().includes(word) || 
+                    item.description.toLowerCase().includes(word)
+                )
             ),
             ...data.temples.filter(item => 
-                item.name.toLowerCase().includes(searchTerm) || 
-                item.description.toLowerCase().includes(searchTerm)
+                searchWords.some(word => 
+                    item.name.toLowerCase().includes(word) || 
+                    item.description.toLowerCase().includes(word)
+                )
             ),
             ...data.countries.filter(item => 
-                item.name.toLowerCase().includes(searchTerm) || 
-                item.description.toLowerCase().includes(searchTerm)
+                searchWords.some(word => 
+                    item.name.toLowerCase().includes(word) || 
+                    item.description.toLowerCase().includes(word)
+                )
             )
         ];
     }
 
     // Display results
     function displayResults(results) {
-        if (results.length === 0) {
-            resultsContainer.innerHTML = '<p>No results found. Try searching for "beach", "temple", or "country".</p>';
+        if (!results.length) {
+            resultsContainer.innerHTML = `
+                <p>No results found.</p>
+                <p>Try: "beach", "temple", or "country"</p>
+            `;
             recommendationsSection.classList.remove('hidden');
             return;
         }
@@ -220,13 +206,26 @@ document.addEventListener('DOMContentLoaded', function() {
         results.forEach(result => {
             const card = document.createElement('div');
             card.className = 'recommendation-card';
-            card.innerHTML = `
-                <img src="${result.imageUrl}" alt="${result.name}" class="card-image" loading="lazy">
-                <div class="card-content">
-                    <h3>${result.name}</h3>
-                    <p>${result.description}</p>
-                </div>
+            
+            // Create image with error handling
+            const img = document.createElement('img');
+            img.src = result.imageUrl;
+            img.alt = result.name;
+            img.className = 'card-image';
+            img.loading = 'lazy';
+            img.onerror = function() {
+                this.src = 'https://via.placeholder.com/300x200?text=Image+Not+Available';
+            };
+            
+            const content = document.createElement('div');
+            content.className = 'card-content';
+            content.innerHTML = `
+                <h3>${result.name}</h3>
+                <p>${result.description}</p>
             `;
+            
+            card.appendChild(img);
+            card.appendChild(content);
             resultsContainer.appendChild(card);
         });
         
