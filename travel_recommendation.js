@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
             resultsContainer.innerHTML = '<p>Loading recommendations...</p>';
             recommendationsSection.classList.remove('hidden');
             
-            const response = await fetch('travel_recommendation_api.json');
+            const response = await fetch('https://github.com/thomaskoh1982/travelrecommendation/blob/main/travel_recommendation_api.json');
             
             if (!response.ok) {
                 throw new Error('Network response was not ok');
